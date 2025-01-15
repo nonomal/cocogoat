@@ -33,7 +33,6 @@
                         style="float: right"
                         @click="
                             $router.replace({
-                                ...$route,
                                 params: {
                                     app: 'cocogoat',
                                 },
@@ -88,7 +87,7 @@
 
         <el-drawer
             :model-value="addType !== ''"
-            custom-class="add-drawer"
+            class="add-drawer"
             title="添加同步账号"
             :size="320"
             :append-to-body="false"
@@ -98,7 +97,6 @@
             :close-on-click-modal="false"
             @close="
                 $router.replace({
-                    ...$route,
                     params: {},
                 })
             "
@@ -110,7 +108,6 @@
                     style="width: 100%"
                     @update:model-value="
                         $router.replace({
-                            ...$route,
                             params: {
                                 app: $event,
                             },
@@ -170,7 +167,6 @@ export default defineComponent({
                 }),
             )
             router.replace({
-                ...route,
                 params: {
                     app: '',
                 },

@@ -42,6 +42,7 @@ declare global {
         $cocogoat: CocogoatGlobal<TypeApp>
         dataLayer: unknown[]
         gtag: (...args: unknown[]) => void
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         initGeetest4: (...args: unknown[]) => any
     }
 }
@@ -62,6 +63,7 @@ declare global {
     window.$cocogoat = window.$cocogoat || {}
     const c = {
         endpoint: '',
+        entrance: '',
         build: '',
         route: process.env.VUE_APP_ROUTER_HASH === 'true' ? 'hash' : 'history',
         app,
@@ -70,13 +72,18 @@ declare global {
         options,
         resources,
         currentUser,
-    } as typeof window['$cocogoat']
+    } as (typeof window)['$cocogoat']
     Object.assign(c, window.$cocogoat)
     window.$cocogoat = c
     window.$cocogoat.onload && window.$cocogoat.onload()
     /// #if !SINGLEFILE
     window.$cocogoat.sw = loadSW()
     /// #endif
+    if (window.$cocogoat.entrance) {
+        const indexJsonUrl = window.$cocogoat.entrance
+        const cdnBaseUrl = indexJsonUrl.replace(/\/[^/]*$/, '/')
+        __webpack_public_path__ = cdnBaseUrl
+    }
 })()
 
 // 检查连续刷新

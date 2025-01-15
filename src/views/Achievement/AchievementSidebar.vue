@@ -6,26 +6,35 @@
                     <router-link
                         v-if="!hideFinished || (achievementFinStat[i.id || 0]?.count || 0) < i.achievements.length"
                         :to="{
-                            ...$route,
                             params: {
-                                cat: i.key === 'wonders_of_the_world' ? '' : i.key,
+                                cat: i.key,
                             },
                         }"
-                        :active-class="i.key === 'wonders_of_the_world' ? '' : 'router-link-active'"
-                        :exact-active-class="i.key === 'wonders_of_the_world' ? 'router-link-active' : ''"
+                        :active-class="i.key === DEFAULTCAT ? '' : 'router-link-active'"
+                        :exact-active-class="i.key === DEFAULTCAT ? 'router-link-active' : ''"
                     >
                         <div>
-                            {{ amos[i.name] }}
+                            {{ i.key === ALLCAT ? '所有' : amos[i.name] }}
                         </div>
                         <small>
                             <b>
                                 <img :src="img('yuanshi')" alt="原石" />
-                                {{ achievementFinStat[i.id || 0]?.reward || 0 }}/{{ i.totalReward }}
+                                {{
+                                    i.key === ALLCAT
+                                        ? totalFin?.reward || 0
+                                        : achievementFinStat[i.id || 0]?.reward || 0
+                                }}/{{ i.totalReward }}
                             </b>
                             <span>
-                                {{ achievementFinStat[i.id || 0]?.count || 0 }}/{{ i.achievements.length }} ({{
-                                    Math.round(
-                                        ((achievementFinStat[i.id || 0]?.count || 0) / i.achievements.length) * 100,
+                                {{
+                                    i.key === ALLCAT ? totalFin?.count || 0 : achievementFinStat[i.id || 0]?.count || 0
+                                }}/{{ i.achievements.length }} ({{
+                                    Math.floor(
+                                        ((i.key === ALLCAT
+                                            ? totalFin?.count || 0
+                                            : achievementFinStat[i.id || 0]?.count || 0) /
+                                            i.achievements.length) *
+                                            100,
                                     )
                                 }}%)
                             </span>
@@ -56,14 +65,17 @@ import { i18n } from '@/i18n'
 import { ref, toRef, defineComponent } from 'vue'
 import type { ElScrollbar } from 'element-plus'
 export default defineComponent({
-    props: ['achievementCat', 'achievementFinStat', 'hideFinished'],
+    props: ['achievementCat', 'achievementFinStat', 'hideFinished', 'totalFin'],
     setup() {
+        const DEFAULTCAT = 'wonders-of-the-world'
+        const ALLCAT = 'all'
+
         const scrollbarRef = ref<InstanceType<typeof ElScrollbar> | null>(null)
         const move = (dir: number) => {
             if (!scrollbarRef.value) return
             const delta = 50
             const move = delta * dir
-            const div = scrollbarRef.value.wrap$
+            const div = scrollbarRef.value.wrapRef
             if (!div) return
             const newScrollLeft = div.scrollLeft + move
             scrollbarRef.value.setScrollLeft(Math.max(0, newScrollLeft))
@@ -74,6 +86,8 @@ export default defineComponent({
             scrollbarRef,
             isMobile: toRef(bus(), 'isMobile'),
             amos: toRef(i18n, 'amos'),
+            DEFAULTCAT,
+            ALLCAT,
         }
     },
 })

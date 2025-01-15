@@ -9,14 +9,17 @@ import 'core-js/features/promise/any'
 import testResources from '@/../resources.json'
 export function speedTest() {
     // group testresources by tag
-    const testResourcesByTag = testResources.reduce((acc, item) => {
-        const tag = item.tag
-        if (!acc[tag]) {
-            acc[tag] = []
-        }
-        acc[tag].push(item)
-        return acc
-    }, {} as Record<string, IResourceItem[]>) as Record<string, IResourceItem[]>
+    const testResourcesByTag = testResources.reduce(
+        (acc, item) => {
+            const tag = item.tag
+            if (!acc[tag]) {
+                acc[tag] = []
+            }
+            acc[tag].push(item)
+            return acc
+        },
+        {} as Record<string, IResourceItem[]>,
+    ) as Record<string, IResourceItem[]>
     // test each tag
     const allPromises = [] as Promise<IResourceItem>[]
     const waitPromises = [] as Promise<IResourceItem>[]
@@ -132,6 +135,14 @@ registerRoute(
         cacheName: cacheName,
     }),
 )
+;(process.env.VUE_APP_BASE_URL_LIST || '').split(',').forEach((url: string) => {
+    registerRoute(
+        new RegExp(`${url}(.*)`),
+        new CacheFirst({
+            cacheName: cacheName,
+        }),
+    )
+})
 
 // networkfirst for jsons
 registerRoute(

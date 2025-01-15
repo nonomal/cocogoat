@@ -3,7 +3,7 @@ export class Worker extends WebWorker {
     url: string
     constructor(_url: string | URL) {
         const url: URL = new URL(_url, location.href)
-        const base = new URL(process.env.BASE_URL, location.href)
+        const base = new URL(process.env.BASE_URL as string, location.href)
         if (location.protocol !== 'file:' && url.origin !== location.origin) {
             const blob = new Blob([`_base='${base}';importScripts('${url}');`], {
                 type: 'application/javascript',
@@ -48,7 +48,7 @@ export function WorkerExtract(wrapper: () => Worker): URL {
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             window.Worker = function (url: string) {
-                return new URL(url)
+                return new URL(url, import.meta.url)
             }
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             window.URL.revokeObjectURL = (_url: string) => {

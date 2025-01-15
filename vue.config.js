@@ -24,12 +24,12 @@ const usePreJS = process.argv.includes('--prejs') || false // isCI
 const useSWC = isCI
     ? 'false'
     : process.argv.includes('--no-swc')
-    ? 'false'
-    : process.argv.includes('--no-swc-minify')
-    ? 'compile'
-    : 'true'
+      ? 'false'
+      : process.argv.includes('--no-swc-minify')
+        ? 'compile'
+        : 'true'
 const useSentry = false
-    // !process.argv.includes('--no-sentry') && process.env.NODE_ENV === 'production' && !!process.env.SENTRY_KEY
+// !process.argv.includes('--no-sentry') && process.env.NODE_ENV === 'production' && !!process.env.SENTRY_KEY
 process.env.VUE_APP_BUILD = require('dayjs')().format('YYMMDDHHmm')
 process.env.VUE_APP_ROUTER_HASH = singleFile ? 'true' : 'false'
 process.env.VUE_APP_SINGLEFILE = singleFile ? 'true' : 'false'
@@ -105,10 +105,10 @@ module.exports = defineConfig({
     },
     configureWebpack: {
         plugins: [
-            AutoImport({
+            AutoImport.default({
                 resolvers: [ElementPlusResolver()],
             }),
-            Components({
+            Components.default({
                 dirs: [],
                 resolvers: [ElementPlusResolver()],
             }),
@@ -298,14 +298,6 @@ module.exports = defineConfig({
                 'monaco-editor': 'var monaco',
                 exceljs: ['https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/exceljs/4.3.0/exceljs.min.js', 'ExcelJS'],
                 jszip: ['https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/jszip/3.7.0/jszip.min.js', 'JSZip'],
-                '@sentry/browser': [
-                    'https://npm.elemecdn.com/@sentry/tracing/build/bundle.tracing.es6.min.js',
-                    'Sentry',
-                ],
-                '@sentry/tracing': [
-                    'https://npm.elemecdn.com/@sentry/tracing/build/bundle.tracing.es6.min.js',
-                    'Sentry',
-                ],
                 ...(usePreJS ? preJsExt : {}),
             })
 

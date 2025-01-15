@@ -27,7 +27,8 @@
                 <div class="a-line">
                     <el-popover
                         v-model:visible="showClear"
-                        :width="190"
+                        width="auto"
+                        trigger="click"
                         :placement="isMobile ? 'left-start' : 'bottom'"
                     >
                         <div style="text-align: center">真的要清空吗？</div>
@@ -37,7 +38,7 @@
                             <el-button size="small" type="danger" plain @click="doClear(true)">清空全部</el-button>
                         </div>
                         <template #reference>
-                            <el-button v-show="!showScanner" type="danger" plain @click="showClear = true">
+                            <el-button v-show="!showScanner" type="danger" plain>
                                 <fa-icon icon="trash-can" />
                                 清空
                             </el-button>
@@ -86,7 +87,7 @@
             </div>
         </template>
         <scanner-dialog v-model:showScanner="showScanner" />
-        <el-dialog v-model="showImport" title="导入" :custom-class="$style.importDialog" destroy-on-close>
+        <el-dialog v-model="showImport" title="导入" :class="$style.importDialog" destroy-on-close>
             <import-dialog :memo-id="autoImportId" @close="closeImport" />
         </el-dialog>
         <achievement-detail :achievement="detail" @close="detail = undefined" />
@@ -103,7 +104,8 @@
                 ></div>
             </div>
             <achievement-sidebar
-                :achievementCat="achievementCat"
+                :totalFin="totalFin"
+                :achievementCat="allAchievementCat"
                 :achievementFinStat="achievementFinStat"
                 :hideFinished="hideFinished"
             />
@@ -124,6 +126,7 @@
                                     v-model="statusVersion"
                                     class="status-version"
                                     multiple
+                                    clearable
                                     collapse-tags
                                     collapse-tags-tooltip
                                     placeholder="所有版本"
@@ -147,6 +150,7 @@
                                 <el-select
                                     v-model="statusQuest"
                                     multiple
+                                    clearable
                                     collapse-tags
                                     collapse-tags-tooltip
                                     class="status-quest"
@@ -162,7 +166,7 @@
                                 <div class="chk">
                                     <el-checkbox v-model="hideFinished" label="隐藏已完成" size="large" />
                                 </div>
-                                <div class="chk">
+                                <div v-if="!checkIfAllCat" class="chk">
                                     <el-checkbox
                                         v-model="selectAllCat"
                                         label="全选本页"
@@ -276,7 +280,7 @@ import IconCocogoat from '@/components/Icons/cocogoat.vue'
 
 import { i18n } from '@/i18n'
 import { store, options } from '@/store'
-import { Achievement, UIAFStatus } from '@/typings/Achievement'
+import { Achievement, AchievementCategory, UIAFStatus } from '@/typings/Achievement'
 
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
 import CustomElScrollVue from '@/components/ElCustomScroll.vue'
@@ -290,6 +294,7 @@ import ExportDropdown from './ExportDropdown.vue'
 import ImportDialog from './ImportDialog.vue'
 import ScannerDialog from './ScannerDialog.vue'
 import versionMap, { allVersions, versionDateMap } from './versionMap'
+import { badgeTypeMap } from './badgeMap'
 import bus from '@/bus'
 import { AchievementItem } from '@/typings/Achievement/Achievement'
 import { debounce } from 'lodash-es'
@@ -427,7 +432,17 @@ export default defineComponent({
                 .filter((e) => e.achievements.length > 0)
             return ach
         })
-
+        const allAchievementCat = computed(() => {
+            const output = []
+            const all = { id: -1, order: 0, key: 'all', name: -1, totalReward: 0, achievements: [] as Achievement[] }
+            achievementCat.value.forEach((e) => {
+                all.totalReward += e.totalReward
+                all.achievements.push(...e.achievements)
+            })
+            output.push(all)
+            output.push(...achievementCat.value)
+            return output
+        })
         const totalCount = computed(() => {
             return achievementCat.value.reduce((acc, e) => acc + e.achievements.length, 0)
         })
@@ -438,15 +453,20 @@ export default defineComponent({
             }, 0)
         })
         const route = useRoute()
+        const DEFAULTCAT = 'wonders-of-the-world'
+        const ALLCAT = 'all'
         const currentCatId = computed(() => {
-            return route.params.cat || 'wonders_of_the_world'
+            return route.params.cat || DEFAULTCAT
         })
         const currentCat = computed(() => {
-            const v = achievementCat.value.find((i) => i.key === currentCatId.value) || achievementCat.value[0]
+            const v: AchievementCategory =
+                allAchievementCat.value.find((i) => i.key === currentCatId.value) || achievementCat.value[0]
             const q = {} as Record<number, string>
             v.achievements.forEach((e) => {
                 if (e.trigger.task && e.trigger.task.length > 0) {
                     q[e.id] = e.trigger.task[0].type
+                } else if (e.trigger.type && badgeTypeMap[e.trigger.type]) {
+                    q[e.id] = badgeTypeMap[e.trigger.type]
                 }
             })
             return {
@@ -608,6 +628,7 @@ export default defineComponent({
             }
             return data
         })
+        const checkIfAllCat = computed(() => currentCatId.value === DEFAULTCAT || currentCatId.value === ALLCAT)
         const checkAllCat = (checked: boolean) => {
             const data = currentCat.value.achievements.concat([])
             if (checked) {
@@ -652,6 +673,7 @@ export default defineComponent({
                 }
                 const item = toRef(achievementFin.value, k.id)
                 item.value.current = current || 0
+                // eslint-disable-next-line vue/no-ref-object-destructure
                 if (item.value.current >= k.total) {
                     item.value.status = UIAFStatus.ACHIEVEMENT_POINT_TAKEN
                     item.value.timestamp = Math.floor(Date.now() / 1000)
@@ -712,6 +734,7 @@ export default defineComponent({
             showClear.value = false
         }
         const autoImportId = computed(() => (route.query.memo ? route.query.memo.toString() : ''))
+        // eslint-disable-next-line vue/no-ref-object-destructure
         const showImport = ref(!!autoImportId.value)
         watch(autoImportId, (v) => {
             if (v) {
@@ -746,6 +769,7 @@ export default defineComponent({
             showScanner,
             selectedIds,
             achievementCat,
+            allAchievementCat,
             currentCatId,
             currentCat,
             achievementFin,
@@ -761,6 +785,7 @@ export default defineComponent({
             sortByStatus,
             hideFinished,
             selectAllCat,
+            checkIfAllCat,
             checkAllCat,
             totalCount,
             totalFin,
